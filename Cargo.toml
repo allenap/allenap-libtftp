@@ -1,0 +1,7 @@
+[package]
+name = "allenap-libtftp"
+version = "0.1.0"
+authors = ["Gavin Panella <gavinpanella@gmail.com>"]
+
+[dependencies]
+byteorder = "*"
