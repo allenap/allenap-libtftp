@@ -24,6 +24,20 @@ The intent is to support writable servers, and clients. The code is
 alpha level right now, and given time I would change quite a lot, but
 for now this works.
 
+## Thanks
+
+I learned a lot from reading the code in Arjan
+Topolovec's [rust-tftp](https://github.com/arjantop/rust-tftp). In an
+ideal world I would have instead contributed back to that, and I may yet
+do that, but I started on this project as a way to learn Rust.
+
+I've read a lot of material about Rust and a lot of Rust code, but
+*writing* code has been the best way to internalise that knowledge, and
+to find out what I thought I knew but didn't. Starting from scratch with
+*rust-tftp* as a guide has worked well for me.
+
+Thank you Arjan Topolovec.
+
 
 ## To do
 
