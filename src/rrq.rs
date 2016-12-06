@@ -1,4 +1,5 @@
 extern crate byteorder;
+extern crate slog;
 
 use std::fs;
 use std::net;
@@ -18,33 +19,38 @@ use super::options::Options;
 use super::make_socket;
 
 
-pub fn serve(
+pub fn serve_file(
     peer: net::SocketAddr,
     filename: Filename,
     txmode: TransferMode,
-    options: Options
+    options: Options,
+    logger: &slog::Logger,
 ) {
-    println!("Received RRQ: {:?} {:?} {:?}", filename, txmode, options);
+    info!(logger, "Received RRQ: {:?} {:?} {:?}", filename, txmode, options);
     let Filename(filename) = filename;
     match make_socket(peer) {
         Ok(socket) => match fs::File::open(&filename) {
             Ok(mut file) => {
                 let len = file.metadata().ok().and_then(|m| Some(m.len()));
+                let logger = logger.new(o!(
+                    "peer" => format!("{}", peer),
+                    "filename" => filename,
+                ));
                 match send_to(
-                    &mut file, len, socket, peer, options) {
-                    Ok(_) => println!(
-                        "Completed transfer to {:?}", peer),
-                    Err(error) => println!(
-                        "Error transferring to {:?}: {}", peer, error),
+                    &mut file, len, socket, peer, options, &logger) {
+                    Ok(_) => info!(
+                        logger, "Completed transfer to {:?}", peer),
+                    Err(error) => error!(
+                        logger, "Error transferring to {:?}: {}", peer, error),
                 };
             },
             Err(error) => {
-                println!("Problem with file {}: {}", &filename, error);
+                error!(logger, "Problem with file {}: {}", &filename, error);
                 // TODO: Send error to peer.
             },
         },
         Err(error) => {
-            println!("Could not open socket: {}", error);
+            error!(logger, "Could not open socket: {}", error);
         },
     };
 }
@@ -59,6 +65,7 @@ fn send_to(
     socket: net::UdpSocket,
     peer: net::SocketAddr,
     options: Options,
+    logger: &slog::Logger,
 )
     -> io::Result<()>
 {
@@ -93,7 +100,7 @@ fn send_to(
             options_out.tsize = len;
         },
         Some(tsize) => {
-            println!("Option tsize should be zero, got: {}", tsize);
+            warn!(logger, "Option tsize should be zero, got: {}", tsize);
         },
         None => {
             // Do nothing.
@@ -107,7 +114,7 @@ fn send_to(
         let packet = Packet::OAck(options_out);
         let size = packet.write(&mut bufout)?;
         socket.send(&bufout[..size])?;
-        println!("Sent OACK ({} bytes) to {}.", size, &peer);
+        info!(logger, "Sent OACK ({} bytes) to {}.", size, &peer);
         // TODO: Wait for ACK(0).
     }
 
@@ -128,7 +135,7 @@ fn send_to(
                 let packet = Packet::Data(BlockNum(blkno), EMPTY_DATA);
                 packet.write(&mut bufout[..4])?;
                 socket.send(&bufout[..size + 4])?;
-                println!("Sent DATA ({} bytes) to {}.", size, &peer);
+                info!(logger, "Sent DATA ({} bytes) to {}.", size, &peer);
 
                 'recv: loop {
                     match socket.recv(&mut bufin) {
@@ -141,21 +148,21 @@ fn send_to(
                                         };
                                     },
                                     Packet::Error(code, message) => {
-                                        println!("{:?}: {:?}", code, message);
+                                        error!(logger, "{:?}: {:?}", code, message);
                                         break 'send;
                                     },
-                                    Packet::Data(..) => println!(
-                                        "Ignoring unexpected DATA packet."),
-                                    Packet::Read(..) => println!(
-                                        "Ignoring unexpected RRQ packet."),
-                                    Packet::Write(..) => println!(
-                                        "Ignoring unexpected WRQ packet."),
-                                    Packet::OAck(..) => println!(
-                                        "Ignoring unexpected OACK packet."),
+                                    Packet::Data(..) => warn!(
+                                        logger, "Ignoring unexpected DATA packet."),
+                                    Packet::Read(..) => warn!(
+                                        logger, "Ignoring unexpected RRQ packet."),
+                                    Packet::Write(..) => warn!(
+                                        logger, "Ignoring unexpected WRQ packet."),
+                                    Packet::OAck(..) => warn!(
+                                        logger, "Ignoring unexpected OACK packet."),
                                 },
                                 Err(error) => {
-                                    println!(
-                                        "Ignoring mangled packet ({:?}).",
+                                    warn!(
+                                        logger, "Ignoring mangled packet ({:?}).",
                                         error);
                                 },
                             };
@@ -165,18 +172,19 @@ fn send_to(
                                 0...7 => {
                                     timeouts += 1;
                                     socket.send(&bufout[..size + 4])?;
-                                    println!(
+                                    info!(
+                                        logger,
                                         "Sent DATA ({} bytes) to {} (attempt #{}).",
                                         size, &peer, timeouts + 1);
                                 },
                                 _ => {
-                                    println!("Too many time-outs; aborting");
+                                    error!(logger, "Too many time-outs; aborting");
                                     break 'send;
                                 },
                             };
                         },
                         Err(error) => {
-                            println!("Error receiving packet: {}", error);
+                            error!(logger, "Error receiving packet: {}", error);
                             break 'send;
                         },
                     }
@@ -196,7 +204,9 @@ fn send_to(
                         socket.send(&bufout[..length])?;
                     },
                     Err(error) => {
-                        println!("Error preparing error packet: {:?}", error);
+                        error!(
+                            logger, "Error preparing error packet: {:?}",
+                            error);
                     },
                 };
 

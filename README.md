@@ -41,10 +41,6 @@ Thank you Arjan Topolovec.
 
 ## To do
 
- * Change all the `println!`s to
-   use [slog](https://github.com/slog-rs/slog) or an equivalent logging
-   library.
-
  * Fix the layering violation used to efficiently construct outgoing
    `DATA` packets.
 

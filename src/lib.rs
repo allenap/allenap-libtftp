@@ -1,5 +1,9 @@
+#[macro_use]
+extern crate slog;
+
 use std::io;
 use std::net;
+use std::error::Error;
 
 pub mod options;
 pub mod packet;
@@ -11,9 +15,13 @@ use self::options::Options;
 use self::packet::{Filename, Packet, TransferMode};
 
 
-pub fn serve(addr: net::SocketAddr, handler: &Handler) -> io::Result<()>
+pub fn serve(
+    addr: net::SocketAddr, handler: &Handler, logger: &slog::Logger)
+    -> io::Result<()>
 {
     let socket = try!(net::UdpSocket::bind(addr));
+    info!(logger, "Listening"; "address" => format!("{}", addr));
+
     // RFC-2347 says "The maximum size of a request packet is 512 octets."
     let mut bufin = [0; 512];
     let mut bufout = [0; 4 + 512];
@@ -30,11 +38,9 @@ pub fn serve(addr: net::SocketAddr, handler: &Handler) -> io::Result<()>
                             None => {},
                         };
                     },
-                    Err(error) => {
-                        println!(
-                            "Ignoring malformed packet: {:?}",
-                            error);
-                    }
+                    Err(error) => warn!(
+                        logger, "Ignoring malformed packet";
+                        "error" => error.description()),
                 }
             },
             Err(error) => return Err(error),
