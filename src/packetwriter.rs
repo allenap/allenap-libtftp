@@ -11,6 +11,7 @@ use self::byteorder::{
 };
 
 
+/// Errors that a `PacketWriter` can encounter.
 #[derive(Debug,PartialEq)]
 pub enum Error {
     NotEnoughSpace,
@@ -47,6 +48,7 @@ impl error::Error for Error {
 pub type Result<T> = result::Result<T, Error>;
 
 
+/// A mechanism for progressively writing parts to a packet buffer.
 #[derive(Debug)]
 pub struct PacketWriter<'a> {
     buf: &'a mut [u8],
@@ -62,18 +64,24 @@ impl<'a> PacketWriter<'a> {
         }
     }
 
+    /// The length of the packet buffer.
     pub fn len(&self) -> usize {
         self.buf.len()
     }
 
+    /// The current position of the write head.
     pub fn pos(&self) -> usize {
         self.pos
     }
 
+    /// The number of bytes remaining after the write-head before the
+    /// end of the buffer.
     pub fn rem(&self) -> usize {
         self.buf.len() - self.pos
     }
 
+    /// Put an unsigned 16-bit integer into the buffer, advancing the
+    /// write head.
     pub fn put_u16(&mut self, value: u16) -> Result<()> {
         if self.rem() >= 2 {
             BigEndian::write_u16(&mut self.buf[self.pos..], value);
@@ -84,6 +92,11 @@ impl<'a> PacketWriter<'a> {
         }
     }
 
+    /// Put a null-terminated string from the buffer, advancing the
+    /// write head.
+    ///
+    /// The string is encoded as UTF-8. No effort is yet made to deal
+    /// with NetASCII.
     pub fn put_string(&mut self, value: &str) -> Result<()> {
         if value.is_ascii() {
             if value.contains("\0") {
@@ -107,6 +120,7 @@ impl<'a> PacketWriter<'a> {
         }
     }
 
+    /// Put bytes into the buffer, advancing the write head.
     pub fn put_bytes(&mut self, bytes: &[u8]) -> Result<()> {
         let end = self.pos + bytes.len();
         if end > self.buf.len() {
@@ -118,6 +132,7 @@ impl<'a> PacketWriter<'a> {
         }
     }
 
+   /// Get the underlying buffer.
     pub fn get(mut self) -> (&'a mut [u8], usize) {
         (self.buf, self.pos)
     }

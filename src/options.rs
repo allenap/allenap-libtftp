@@ -7,13 +7,17 @@ use super::packetreader;
 use super::packetwriter;
 
 
-// Options. RFC-2347.
+/// TFTP transfer options. Defined in RFC-2347.
 #[derive(Debug)]
 pub struct Options {
-    pub blksize:    Option<u16>,  // 8-65464 inclusive. RFC-2348.
-    pub timeout:    Option<u8>,   // 1-255 seconds, inclusive. RFC-2349.
-    pub tsize:      Option<u64>,  // 0 for query. RFC-2349.
-    pub windowsize: Option<u16>,  // 1-65535. RFC-7440.
+    /// Block size; 8-65464 inclusive. Defined in RFC-2348.
+    pub blksize:    Option<u16>,
+    /// Time-out; 1-255 seconds, inclusive. Defined in RFC-2349.
+    pub timeout:    Option<u8>,
+    /// Transfer size; 0 for query. Defined in RFC-2349.
+    pub tsize:      Option<u64>,
+    /// Window size; 1-65535. Defined in RFC-7440.
+    pub windowsize: Option<u16>,
 }
 
 
@@ -28,11 +32,13 @@ impl Options {
         }
     }
 
+    /// Is one or more of the options set?
     pub fn is_set(&self) -> bool {
         self.blksize.is_some() || self.timeout.is_some() ||
             self.tsize.is_some() || self.windowsize.is_some()
     }
 
+    /// Read options from the given reader.
     pub fn read<'a>
         (reader: &mut packetreader::PacketReader<'a>)
          -> Result<Self>
@@ -46,6 +52,7 @@ impl Options {
         }
     }
 
+    /// Write options to the given writer.
     pub fn write
         (self, writer: &mut packetwriter::PacketWriter)
         -> Result<()>
@@ -69,6 +76,9 @@ impl Options {
         Ok(())
     }
 
+    /// Parse options from the given buffer.
+    ///
+    /// Note that errors arising from this method are *strings*.
     pub fn parse<'a>(buf: &'a [u8]) -> result::Result<Self, String> {
         let mut container = Self::new();
         let mut options = OptionStringIter::new(buf);
@@ -79,7 +89,7 @@ impl Options {
                     match options.next() {
                         OptionString::Terminated(value) => {
                             let value = &String::from_utf8_lossy(value);
-                            try!(container.parse_option(option, value));
+                            container.parse_option(option, value)?;
                         },
                         OptionString::Unterminated(value) => {
                             let value = &String::from_utf8_lossy(value);
@@ -112,13 +122,13 @@ impl Options {
     {
         match option.to_lowercase().as_ref() {
             "blksize" => self.blksize = Some(
-                try!(Options::parse_blksize(value))),
+                Options::parse_blksize(value)?),
             "timeout" => self.timeout = Some(
-                try!(Options::parse_timeout(value))),
+                Options::parse_timeout(value)?),
             "tsize" => self.tsize = Some(
-                try!(Options::parse_tsize(value))),
+                Options::parse_tsize(value)?),
             "windowsize" => self.windowsize = Some(
-                try!(Options::parse_windowsize(value))),
+                Options::parse_windowsize(value)?),
             _ => {
                 // Ignore, as advised in RFC-2347.
                 // TODO: Record or log unrecognised options?
