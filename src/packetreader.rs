@@ -10,6 +10,7 @@ use self::byteorder::{
 };
 
 
+/// Errors that a `PacketReader` can encounter.
 #[derive(Debug,PartialEq)]
 pub enum Error {
     NotEnoughData,
@@ -43,6 +44,7 @@ impl error::Error for Error {
 pub type Result<T> = result::Result<T, Error>;
 
 
+/// A mechanism for progressively reading parts from a packet buffer.
 #[derive(Debug)]
 pub struct PacketReader<'a> {
     buf: &'a [u8],
@@ -58,18 +60,24 @@ impl<'a> PacketReader<'a> {
         }
     }
 
+    /// The length of the packet buffer.
     pub fn len(&self) -> usize {
         self.buf.len()
     }
 
+    /// The current position of the read head.
     pub fn pos(&self) -> usize {
         self.pos
     }
 
+    /// The number of bytes remaining after the read head before the end
+    /// of the buffer.
     pub fn rem(&self) -> usize {
         self.buf.len() - self.pos
     }
 
+    /// Take an unsigned 16-bit integer from the buffer, advancing the
+    /// read head.
     pub fn take_u16(&mut self) -> Result<u16> {
         if self.rem() >= 2 {
             let value = BigEndian::read_u16(&self.buf[self.pos..]);
@@ -80,6 +88,11 @@ impl<'a> PacketReader<'a> {
         }
     }
 
+    /// Take a null-terminated string from the buffer, advancing the
+    /// read head.
+    ///
+    /// The string is decoded as UTF-8, with non-UTF-8 content being
+    /// discarded. No effort is yet made to deal with NetASCII.
     pub fn take_string(&mut self) -> Result<String> {
         for pos in self.pos..self.buf.len() {
             if self.buf[pos] == 0u8 {
@@ -93,6 +106,8 @@ impl<'a> PacketReader<'a> {
         Err(Error::StringNotTerminated)
     }
 
+    /// Take the remaining bytes from the buffer, advancing the read
+    /// head.
     pub fn take_remaining(&mut self) -> Result<&'a [u8]> {
         let rem = &self.buf[self.pos..];
         self.pos = self.buf.len();

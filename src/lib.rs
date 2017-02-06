@@ -15,11 +15,15 @@ use self::options::Options;
 use self::packet::{Filename, Packet, TransferMode};
 
 
+/// Starts a TFTP server at the given address.
+///
+/// Well-formed requests are passed to `handler`, and all logging is
+/// handled by `logger`.
 pub fn serve(
     addr: net::SocketAddr, handler: &Handler, logger: &slog::Logger)
     -> io::Result<()>
 {
-    let socket = try!(net::UdpSocket::bind(addr));
+    let socket = net::UdpSocket::bind(addr)?;
     info!(logger, "Listening"; "address" => format!("{}", addr));
 
     // RFC-2347 says "The maximum size of a request packet is 512 octets."
@@ -49,8 +53,32 @@ pub fn serve(
 }
 
 
+/// A TFTP handler to which requests are passed once they've been
+/// parsed. A handler can choose to ignore, reject (with an error), or
+/// serve each request that comes in.
 pub trait Handler {
 
+    /// Handle a new, well-formed, TFTP request.
+    ///
+    /// The default implementation calls
+    /// [`handle_rrq`](#method.handle_rrq) for a read request and
+    /// [`handle_wrq`](#method.handle_wrq) for a write request, and
+    /// [`handle_other`](#method.handle_other) for everything else.
+    ///
+    /// In case of an error, this can return a `Packet` representing the
+    /// error to be sent to the other side. For example:
+    ///
+    /// ```
+    /// # use allenap_libtftp::packet;
+    /// Some(packet::Packet::Error(
+    ///     packet::ErrorCode::AccessViolation,
+    ///     packet::ErrorMessage("read not supported".to_owned()),
+    /// ));
+    /// ```
+    ///
+    /// Use this when the error occurs prior the commencing the
+    /// transfer; once the transfer has begin, send errors via the
+    /// channel created for the transfer.
     fn handle(
         &self, local: net::SocketAddr, remote: net::SocketAddr, packet: Packet)
         -> Option<Packet>
@@ -65,6 +93,10 @@ pub trait Handler {
         }
     }
 
+    /// Handle a read request (`RRQ`).
+    ///
+    /// By default this is rejected as an access violation. Implementors
+    /// can define something more interesting.
     fn handle_rrq(
         &self, _local: net::SocketAddr, _remote: net::SocketAddr,
         _filename: Filename, _txmode: TransferMode, _options: Options)
@@ -76,6 +108,10 @@ pub trait Handler {
         ))
     }
 
+    /// Handle a write request (`WRQ`).
+    ///
+    /// By default this is rejected as an access violation. Implementors
+    /// can define something more interesting.
     fn handle_wrq(
         &self, _local: net::SocketAddr, _remote: net::SocketAddr,
         _filename: Filename, _txmode: TransferMode, _options: Options)
@@ -87,6 +123,12 @@ pub trait Handler {
         ))
     }
 
+    /// Handle all other requests.
+    ///
+    /// By default these are completely ignored. The TFTP specs do not
+    /// define request types other than `RRQ` and `WRQ` so this might be
+    /// a misdirected or corrupted packet. Implementors may want to log
+    /// this.
     fn handle_other(
         &self, _local: net::SocketAddr, _remote: net::SocketAddr,
         _packet: Packet)
@@ -98,6 +140,7 @@ pub trait Handler {
 }
 
 
+/// Bind a new UDP socket at the given address.
 fn make_socket(peer: net::SocketAddr) -> io::Result<net::UdpSocket> {
     match peer {
         net::SocketAddr::V4(_) => net::UdpSocket::bind(("0.0.0.0", 0)),
