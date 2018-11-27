@@ -186,12 +186,12 @@ mod test_options {
         assert_eq!(Options::parse_blksize("123"), Ok(123u16));
         assert_eq!(
             Options::parse_blksize("foo"), Err(
-                ("Invalid blksize value \"foo\": ".to_string() +
-                 "invalid digit found in string")));
+                "Invalid blksize value \"foo\": ".to_string() +
+                    "invalid digit found in string"));
         assert_eq!(
             Options::parse_blksize("65536"), Err(
-                ("Invalid blksize value \"65536\": ".to_string() +
-                 "number too large to fit in target type")));
+                "Invalid blksize value \"65536\": ".to_string() +
+                    "number too large to fit in target type"));
     }
 
     #[test]
@@ -199,12 +199,12 @@ mod test_options {
         assert_eq!(Options::parse_timeout("123"), Ok(123u8));
         assert_eq!(
             Options::parse_timeout("foo"), Err(
-                ("Invalid timeout value \"foo\": ".to_string() +
-                 "invalid digit found in string")));
+                "Invalid timeout value \"foo\": ".to_string() +
+                    "invalid digit found in string"));
         assert_eq!(
             Options::parse_timeout("256"), Err(
-                ("Invalid timeout value \"256\": ".to_string() +
-                 "number too large to fit in target type")));
+                "Invalid timeout value \"256\": ".to_string() +
+                    "number too large to fit in target type"));
     }
 
     #[test]
@@ -212,12 +212,12 @@ mod test_options {
         assert_eq!(Options::parse_tsize("123"), Ok(123u64));
         assert_eq!(
             Options::parse_tsize("foo"), Err(
-                ("Invalid tsize value \"foo\": ".to_string() +
-                 "invalid digit found in string")));
+                "Invalid tsize value \"foo\": ".to_string() +
+                    "invalid digit found in string"));
         assert_eq!(
             Options::parse_tsize("18446744073709551616"), Err(
-                ("Invalid tsize value \"18446744073709551616\": ".to_string() +
-                 "number too large to fit in target type")));
+                "Invalid tsize value \"18446744073709551616\": ".to_string() +
+                 "number too large to fit in target type"));
     }
 
     #[test]
@@ -225,12 +225,12 @@ mod test_options {
         assert_eq!(Options::parse_windowsize("123"), Ok(123u16));
         assert_eq!(
             Options::parse_windowsize("foo"), Err(
-                ("Invalid windowsize value \"foo\": ".to_string() +
-                 "invalid digit found in string")));
+                "Invalid windowsize value \"foo\": ".to_string() +
+                    "invalid digit found in string"));
         assert_eq!(
             Options::parse_windowsize("65536"), Err(
-                ("Invalid windowsize value \"65536\": ".to_string() +
-                 "number too large to fit in target type")));
+                "Invalid windowsize value \"65536\": ".to_string() +
+                    "number too large to fit in target type"));
     }
 
     #[test]
