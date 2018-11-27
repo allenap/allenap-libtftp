@@ -1,6 +1,5 @@
 extern crate byteorder;
 
-use std::ascii::AsciiExt;
 use std::error;
 use std::fmt;
 use std::result;
@@ -132,8 +131,8 @@ impl<'a> PacketWriter<'a> {
         }
     }
 
-   /// Get the underlying buffer.
-    pub fn get(mut self) -> (&'a mut [u8], usize) {
+    /// Get the underlying buffer.
+    pub fn get(self) -> (&'a mut [u8], usize) {
         (self.buf, self.pos)
     }
 }

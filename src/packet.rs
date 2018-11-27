@@ -192,7 +192,6 @@ impl TransferMode {
     }
 
     fn parse(buffer: &[u8]) -> Option<Self> {
-        use std::ascii::AsciiExt;
         if buffer.eq_ignore_ascii_case("netascii".as_bytes()) {
             Some(TransferMode::NetASCII)
         }
