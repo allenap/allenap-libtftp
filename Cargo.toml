@@ -10,6 +10,6 @@ homepage = "https://github.com/allenap/allenap-libtftp"
 repository = "https://github.com/allenap/allenap-libtftp"
 
 [dependencies]
-byteorder = "^0.5.3"
+byteorder = "^1.2.0"
 slog = "^2.4.0"
 slog-term = "^2.4.0"
