@@ -1,13 +1,13 @@
 [package]
-name = "allenap-libtftp"
-description = "allenap's TFTP library"
-version = "0.2.1"
 authors = ["Gavin Panella <gavinpanella@gmail.com>"]
-license = "AGPL-3.0"
-
-documentation = "https://github.com/allenap/allenap-libtftp/blob/master/README.md"
+description = "allenap's TFTP library"
 homepage = "https://github.com/allenap/allenap-libtftp"
+keywords = ["unsupported"]
+license = "AGPL-3.0"
+name = "allenap-libtftp"
+readme = "README.md"
 repository = "https://github.com/allenap/allenap-libtftp"
+version = "0.2.2"
 
 [dependencies]
 byteorder = "^1.2.0"
